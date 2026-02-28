@@ -3,6 +3,16 @@ import streamlit as st
 from openai import OpenAI
 
 env = dotenv_values(".env")
+
+### NOWE! Secrets using Streamlit Cloud Mechanism 
+# https://docs.streamlit.io/deploy/streamlit-community-cloud/deploy-your-app/secrets-management 
+if 'QDRANT_URL' in st.secrets: 
+    env['QDRANT_URL'] = st.secrets['QDRANT_URL'] 
+
+if 'QDRANT_API_KEY' in st.secrets: 
+    env['QDRANT_API_KEY'] = st.secrets['QDRANT_API_KEY'] 
+### 
+
 openai_client = OpenAI(api_key=env["OPENAI_API_KEY"])
 
 
