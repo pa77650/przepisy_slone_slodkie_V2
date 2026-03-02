@@ -4,30 +4,30 @@ from openai import OpenAI
 
 env = dotenv_values(".env")
 
-### NOWE! Secrets using Streamlit Cloud Mechanism 
-# https://docs.streamlit.io/deploy/streamlit-community-cloud/deploy-your-app/secrets-management 
-if 'QDRANT_URL' in st.secrets: 
-    env['QDRANT_URL'] = st.secrets['QDRANT_URL'] 
+# ### NOWE! Secrets using Streamlit Cloud Mechanism 
+# # https://docs.streamlit.io/deploy/streamlit-community-cloud/deploy-your-app/secrets-management 
+# if 'QDRANT_URL' in st.secrets: 
+#     env['QDRANT_URL'] = st.secrets['QDRANT_URL'] 
 
-if 'QDRANT_API_KEY' in st.secrets: 
-    env['QDRANT_API_KEY'] = st.secrets['QDRANT_API_KEY'] 
-### 
+# if 'QDRANT_API_KEY' in st.secrets: 
+#     env['QDRANT_API_KEY'] = st.secrets['QDRANT_API_KEY'] 
+# ### 
 
 openai_client = OpenAI(api_key=env["OPENAI_API_KEY"])
 
 
 def streamlit_app():
-    st.title("Generator przepisów")
+    st.title("Generator przepisów Z tego co mam w lodówce")
 
     st.subheader("Wpisz nazwy produktów")
     product_name = st.text_input("Nazwy produktów", "")
 
-    product_type_label = "Czy produkt jest słodki bądź wytrawny?"
-    product_type = st.selectbox(product_type_label, ("Słodki", "Wytrawny"))
+    product_type_label = "Czy produkt ma być wytrawny czy deserem?"
+    product_type = st.selectbox(product_type_label, ("Wytrawny", "Deser"))
 
-    st.subheader("Produkty, na które jesteś uczulony (opcjonalnie)")
+    st.subheader("Produkty, na które jesteś uczulony")
     allergic_products = st.text_input(
-        "Wpisz składniki oddzielone przecinkami", ""
+        "Wpisz składniki", ""
     )
 
     if st.button("Stwórz przepis"):
@@ -37,7 +37,7 @@ def streamlit_app():
                 product_type,
                 allergic_products
             )
-            st.markdown(recipe)
+            st.markdown(recipe)   
         else:
             st.write("Proszę wprowadź nazwy produktów")
 
@@ -58,8 +58,8 @@ Typ dania: {product_type}.
 
 {allergy_info}
 
-Jeśli typ to "Słodki" – stwórz przepis na ciasto.
-Jeśli typ to "Wytrawny" – stwórz danie główne obiadowe.
+Jeśli typ to "Deser" - stwórz przepis na ciasto.
+Jeśli typ to "Wytrawny" - stwórz danie główne obiadowe.
 
 WAŻNE:
 - Nie używaj żadnego składnika, na który użytkownik jest uczulony.
@@ -68,7 +68,9 @@ WAŻNE:
 Podaj:
 - nazwę dania
 - listę składników
+- szacowany czas przygotowania
 - instrukcję krok po kroku
+- na końcu podsumuj ilość makroskładników (białko, wędlowodany, tłuszcze w gramach oraz procentowo w nawiasie) i ilość kalorii
 """
 
     response = openai_client.chat.completions.create(
