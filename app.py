@@ -1,6 +1,7 @@
 from dotenv import dotenv_values
 import streamlit as st
 from openai import OpenAI
+import base64
 
 # Użytkownik wpisuje swój klucz OpenAI
 user_api_key = st.text_input("Wpisz swój klucz OpenAI", type="password")
@@ -14,7 +15,6 @@ if not user_api_key:
 openai_client = OpenAI(api_key=user_api_key)
 
 env = dotenv_values(".env")
-
 ### Secrets using Streamlit Cloud Mechanism
 # https://docs.streamlit.io/deploy/streamlit-community-cloud/deploy-your-app/secrets-management
 if 'QDRANT_URL' in st.secrets:
@@ -27,32 +27,48 @@ if 'QDRANT_API_KEY' in st.secrets:
 
 
 def streamlit_app():
-    st.title("Generator przepisów Z tego co mam w lodówce")
+    col1, col2, col3 = st.columns([1,2,1])
+    with col2:
+        st.image("plate", width=150)
 
-    st.subheader("Wpisz nazwy produktów")
+    st.title("Generator przepisów z tego co mam w lodówce")
+
+    st.subheader("Wpisz nazwy produktów (opcjonalne)")
     product_name = st.text_input("Nazwy produktów", "")
 
-    product_type_label = "Czy produkt ma być wytrawny czy deserem?"
-    product_type = st.selectbox(product_type_label, ("Wytrawny", "Deser"))
+    st.subheader("Lub wrzuć zdjęcie produktów")
+    uploaded_file = st.file_uploader(
+        "Dodaj zdjęcie (jpg/png)", 
+        type=["jpg", "jpeg", "png"]
+    )
 
-    st.subheader("Produkty, na które jesteś uczulony")
+    product_type = st.selectbox(
+        "Czy produkt ma być wytrawny czy deserem?",
+        ("Wytrawny", "Deser")
+    )
+
     allergic_products = st.text_input(
-        "Wpisz składniki", ""
+        "Produkty, na które jesteś uczulony",
+        ""
     )
 
     if st.button("Stwórz przepis"):
-        if product_name:
-            recipe = generate_recipe(
-                product_name,
-                product_type,
-                allergic_products
-            )
-            st.markdown(recipe)   
-        else:
-            st.write("Proszę wprowadź nazwy produktów")
+
+        if not product_name and not uploaded_file:
+            st.warning("Podaj składniki lub dodaj zdjęcie.")
+            return
+
+        recipe = generate_recipe(
+            product_name,
+            product_type,
+            allergic_products,
+            uploaded_file
+        )
+
+        st.markdown(recipe)
 
 
-def generate_recipe(product, product_type, allergic_products):
+def generate_recipe(product, product_type, allergic_products, uploaded_file):
 
     allergy_info = (
         f"Użytkownik jest uczulony na: {allergic_products}. "
@@ -62,35 +78,55 @@ def generate_recipe(product, product_type, allergic_products):
     )
 
     prompt = f"""
-Stwórz przepis na danie z następujących produktów: {product}.
+Stwórz przepis na podstawie dostarczonych informacji.
 
-Typ dania: {product_type}.
+Tekstowe składniki: {product}
+
+Typ dania: {product_type}
 
 {allergy_info}
 
 Jeśli typ to "Deser" - stwórz przepis na ciasto.
 Jeśli typ to "Wytrawny" - stwórz danie główne obiadowe.
 
-WAŻNE:
-- Nie używaj żadnego składnika, na który użytkownik jest uczulony.
-- Jeśli któryś z podanych produktów zawiera alergen, zaproponuj bezpieczną alternatywę.
-
 Podaj:
 - nazwę dania
 - listę składników
 - szacowany czas przygotowania
 - instrukcję krok po kroku
-- na końcu podsumuj ilość makroskładników (białko, wędlowodany, tłuszcze w gramach oraz procentowo w nawiasie) i ilość kalorii
+- makroskładniki i kalorie
 """
+
+    content = [
+        {"type": "text", "text": prompt}
+    ]
+
+    # Jeśli użytkownik dodał zdjęcie
+    if uploaded_file is not None:
+        image_bytes = uploaded_file.read()
+        base64_image = base64.b64encode(image_bytes).decode("utf-8")
+
+        content.append({
+            "type": "image_url",
+            "image_url": {
+                "url": f"data:image/jpeg;base64,{base64_image}"
+            }
+        })
 
     response = openai_client.chat.completions.create(
         model="gpt-4o-mini",
         messages=[
-            {"role": "system", "content": "Jesteś profesjonalnym kucharzem i dbasz o bezpieczeństwo żywieniowe."},
-            {"role": "user", "content": prompt}
+            {
+                "role": "system",
+                "content": "Jesteś profesjonalnym kucharzem i analizujesz również zdjęcia produktów."
+            },
+            {
+                "role": "user",
+                "content": content
+            }
         ],
+        max_tokens=800,
         temperature=0.6,
-        max_tokens=600,
     )
 
     return response.choices[0].message.content
