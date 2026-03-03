@@ -13,7 +13,7 @@ if not user_api_key:
 # Utworzenie klienta OpenAI
 openai_client = OpenAI(api_key=user_api_key)
 
-#env = dotenv_values(".env")
+env = dotenv_values(".env")
 
 ### Secrets using Streamlit Cloud Mechanism
 # https://docs.streamlit.io/deploy/streamlit-community-cloud/deploy-your-app/secrets-management
