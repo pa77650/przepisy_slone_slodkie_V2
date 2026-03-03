@@ -2,18 +2,28 @@ from dotenv import dotenv_values
 import streamlit as st
 from openai import OpenAI
 
-env = dotenv_values(".env")
+# Użytkownik wpisuje swój klucz OpenAI
+user_api_key = st.text_input("Wpisz swój klucz OpenAI", type="password")
 
-# ### NOWE! Secrets using Streamlit Cloud Mechanism 
-# # https://docs.streamlit.io/deploy/streamlit-community-cloud/deploy-your-app/secrets-management 
-# if 'QDRANT_URL' in st.secrets: 
-#     env['QDRANT_URL'] = st.secrets['QDRANT_URL'] 
+# Sprawdzenie czy klucz został wpisany
+if not user_api_key:
+    st.warning("Musisz podać swój klucz OpenAI, aby wygenerować przepis.")
+    st.stop()  # zatrzymuje dalsze działanie aplikacji, dopóki nie wpisze klucza
 
-# if 'QDRANT_API_KEY' in st.secrets: 
-#     env['QDRANT_API_KEY'] = st.secrets['QDRANT_API_KEY'] 
-# ### 
+# Utworzenie klienta OpenAI
+openai_client = OpenAI(api_key=user_api_key)
 
-openai_client = OpenAI(api_key=env["OPENAI_API_KEY"])
+#env = dotenv_values(".env")
+
+### Secrets using Streamlit Cloud Mechanism
+# https://docs.streamlit.io/deploy/streamlit-community-cloud/deploy-your-app/secrets-management
+if 'QDRANT_URL' in st.secrets:
+    env['QDRANT_URL'] = st.secrets['QDRANT_URL']
+if 'QDRANT_API_KEY' in st.secrets:
+    env['QDRANT_API_KEY'] = st.secrets['QDRANT_API_KEY']
+###
+
+#openai_client = OpenAI(api_key=env["OPENAI_API_KEY"])
 
 
 def streamlit_app():
