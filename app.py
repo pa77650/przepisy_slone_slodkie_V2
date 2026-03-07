@@ -33,7 +33,7 @@ def streamlit_app():
 
     st.title("Generator przepisów z tego co mam w lodówce")
 
-    st.subheader("Wpisz nazwy produktów (opcjonalne)")
+    st.subheader("Wpisz nazwy produktów")
     product_name = st.text_input("Nazwy produktów", "")
 
     st.subheader("Lub wrzuć zdjęcie produktów")
